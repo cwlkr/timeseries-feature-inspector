@@ -10,31 +10,39 @@ meanPlotsUI = function(id){
   )
 }
 
-meanPlots = function(input, output, session, data){
-  output$table = DT::renderDataTable(data())
-  output$names = renderText(colnames(data()))
-  df = reactiveValues(data = isolate(reactive(data())))
+meanPlots = function(input, output, session, data, stim.time, ngroups){
   
+  ns <- session$ns
+
   output$mytabs <- renderUI({
-    data = data()
-    groups = length(unique(df$data$Image_Metadata_Site))
     # create tabPanel with datatable in it
-    myTabs = lapply(seq_len(groups), function(i) {
+    myTabs = lapply(seq_len(ngroups()), function(i) {
       tabPanel(paste0("group_",i),
-               DT::dataTableOutput(paste0("group_",i))
+               plotlyOutput(ns(paste0("group_",i)))
       )
     })
 
     do.call(tabsetPanel, myTabs)
   })
-
-  # create datatables
-  observe(
-    lapply(seq_len(length(df$data$Image_Metadata_Site)), function(i) {
-      output[[paste0("group_",i)]] <- DT::renderDataTable({
-        as.data.frame(df$data[Image_Metadata_Site==i])
+  #create datatables #TODO slider for CI
+  observe({
+    lapply(seq_len(ngroups()), function(i) {
+      output[[paste0("group_",i)]] <- renderPlotly({
+        dt = setDT(data())[get(input$meta.grouping) == i]
+        stims = stim.times()
+        ggplotly(
+        create_plot(dt, ci.lvl = 0.05,
+        stimulus.rug = stims,
+        nuc.erk = input$nuc.erk,
+        cyto.erk = input$cyto.erk,
+        time.var = input$time.var,
+        stim.var = input$stim.var,
+        erk.ratio.var = erk.ratio,
+        vlines = False)
+        )
       })
     })
+  }
   )
     
 }
