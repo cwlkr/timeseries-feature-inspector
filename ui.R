@@ -12,7 +12,7 @@ shinyUI(fluidPage(
     sidebarPanel(
       #Selector for file upload
       fileInput(
-        'seriesSelected',
+        'seriesSelectedFileIn',
         'Select data file (e.g. tCoursesSelected.csv) and press "Load Data"',
         accept = c('text/csv', 'text/comma-separated-values,text/plain')
       ),
@@ -25,12 +25,15 @@ shinyUI(fluidPage(
         'receptordata',
         'Select data file (e.g. receptor) and press "Load Data"',
         accept = c('text/csv', 'text/comma-separated-values,text/plain')
-      )
+      ),
+      actionButton("loadAll", "Load Files")
     ),
     mainPanel(
       tabsetPanel(
-        tabPanel("MeanPlots", renderPlot("vreT"))
-        )
+        tabPanel("meanPlots", 
+                 #DT::dataTableOutput("table")
+                 meanPlotsUI("meanPlots")
+                 ))
       )
     )
   )

@@ -4,14 +4,35 @@ library(shiny)
 library(heatmaply)
 library(plotly)
 library(data.table)
+options(shiny.maxRequestSize = 200 * 1024 ^ 2)
 
 shinyServer(function(input, output, session) {
   useShinyjs()
-  output$vreT = renderText({
-    file = input$inFileLoadNuc
-    if (is.null(file))
+  # loader = reactiveValues(dataLoadNuc  = isolate(input$loadAll))
+  
+  ## TODO load and merge and do all the stuff!!
+  dataLoadNuc <- eventReactive(input$loadAll, {
+    cat("dataLoadNuc\n")
+    locFilePath = input$seriesSelectedFileIn$datapath
+    locmeta = input$metadata$datapath
+    locrec = input$receptordata$datapath
+    #counter$dataLoadNuc <- input$loadAll - 1
+    # validate(
+    #   need(input$locFilePath != "" || !is.null(locFilePath)  && 
+    #           input$locmeta != "" || !is.null(locmeta) &&
+    #           input$locrec != "" || !is.null(locrec)
+    #          , "Please select a data set")
+    # )
+    if (is.null(locFilePath) || locFilePath == '')
       return(NULL)
-    file$datapath
-    })
+    else {
+      fread(locFilePath)
+      return(fread(locFilePath))
+    }
+  })
+  
+  #output$table =  DT::renderDataTable(dataLoadNuc())
+  callModule(meanPlots, "meanPlots", data = reactive(dataLoadNuc()))
+  
   }
 )

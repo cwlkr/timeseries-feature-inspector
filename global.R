@@ -1,3 +1,3 @@
 
-l = list.files(path = "shiny-applet/modules", pattern = "", full.names = T)
+l = list.files(path = "modules", pattern = "", full.names = T)
 lapply(l, source)
