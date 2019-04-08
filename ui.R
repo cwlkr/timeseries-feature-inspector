@@ -26,13 +26,14 @@ shinyUI(fluidPage(
         'Select data file (e.g. receptor) and press "Load Data"',
         accept = c('text/csv', 'text/comma-separated-values,text/plain')
       ),
-      actionButton("loadAll", "Load Files")
+      actionButton("loadAll", "Load Files"),
+      uiOutput("cond")
     ),
     mainPanel(
       tabsetPanel(
-        tabPanel("meanPlots", 
+        tabPanel("meanPlots"
                  #DT::dataTableOutput("table")
-                 meanPlotsUI("meanPlots")
+                 #meanPlotsUI("meanPlots")
                  ))
       )
     )
