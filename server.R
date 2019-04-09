@@ -109,7 +109,7 @@ shinyServer(function(input, output, session) {
         ),
         selectInput(
           'time.var',
-          'Select Time Label (e.g. RealTime):',
+          'Select Time Label (e.g. RealTime or Image_Metadata_T):',
           locCols,
           width = '100%',
           selected = locColTime
@@ -137,14 +137,14 @@ shinyServer(function(input, output, session) {
         ),        
         selectInput(
           'group.var',
-          'Select Nuclear Erk Label (e.g. objNuc_c_Intensity_MeanIntensity_imErk):',
+          'Additional Grouping variables for unique Grouping:',
           locCols,
           width = '100%',
           selected = locColGroup, multiple = TRUE
         ),       
         selectInput(
           'track.var',
-          'Select Nuclear Erk Label (e.g. objNuc_c_Intensity_MeanIntensity_imErk):',
+          'unique Identifier',
           locCols,
           width = '100%',
           selected = locColTrackID
@@ -174,8 +174,9 @@ shinyServer(function(input, output, session) {
       )
     })
     get.stim.times = eventReactive(input$mergeandplot, {
-      stim.times <- metadata %>% select(contains(input$stim.time.var), input$stim.var) %>% 
+      stim.times <- loadMetaData() %>% select(contains(input$stim.time.var), input$stim.var) %>% 
         select(contains(input$stim.time.var)) %>% slice(1)  %>% c(., recursive=TRUE) %>% as.numeric()
+      cat(stim.times)
       return(stim.times)
     })
     get.dt.data = eventReactive(input$mergeandplot, {
@@ -199,7 +200,16 @@ shinyServer(function(input, output, session) {
       get.dt.data() %>% select(input$meta.grouping)  %>% summarise(n = length(unique(get(input$meta.grouping)))) %>% pull()
     )
   #output$table =  DT::renderDataTable(dataLoadNuc())
-  callModule(meanPlots, "meanPlots", data = reactive(get.dt.data()), reactive(get.stim.times()), reactive(get.dt.ngroups()))
+  callModule(meanPlots, "meanPlots",
+             data = reactive(get.dt.data()),
+             reactive(get.stim.times()),
+             reactive(get.dt.ngroups()),
+             meta.grouping = reactive(input$meta.grouping),
+             nuc.erk = reactive(input$nuc.erk),
+             cyto.erk = reactive(input$cyto.erk),
+             time.var = reactive(input$time.var),
+             stim.var = reactive(input$stim.var)
+             )
   
   }
 )

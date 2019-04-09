@@ -1,24 +1,49 @@
+#TODO Aquisition Freq time axis
 meanPlotsUI = function(id){
   ns = NS(id)
   tagList(
-  fluidRow(
-  column(6,textOutput("names"))
-  #column(DT::dataTableOutput(ns("table"))),
-  ),
-  uiOutput(ns("mytabs")
-    )
+  uiOutput(ns("mytabs")),
+  uiOutput(ns("ribbonbutton")),
+  uiOutput(ns("dnr"))
   )
 }
 
-meanPlots = function(input, output, session, data, stim.time, ngroups){
+meanPlots = function(input, output, session, data, stim.times, ngroups,
+                     meta.grouping,
+                     nuc.erk, cyto.erk, time.var, stim.var){
   
   ns <- session$ns
+  
+  observeEvent(data(),{
+    output$dnr = renderUI(downloadButton(ns("pdfr"), "Download Average Plots"))}
+    )
+  observeEvent(data(),{
+    output$ribbonbutton = renderUI(checkboxInput(ns("checkrug"), "Display CI ribbon", value = TRUE))
+    }
+  )
+  
 
+  
+  output$pdfr <- downloadHandler(
+    filename = "averagePlots.pdf",
+    content = function(file) {
+      create_pdf(setDT(isolate(data())), ci.lvl = 0.05,
+                 stimulus.rug = stim.times(),
+                 nuc.erk = nuc.erk(),
+                 cyto.erk = cyto.erk(),
+                 time.var = time.var(),
+                 stim.var = stim.var(),
+                 erk.ratio.var = "erk.ratio",
+                 vlines = FALSE, ngroups = ngroups(), pdf.filename = file, meta.grouping  = meta.grouping())
+    }
+    )
+  
+  
   output$mytabs <- renderUI({
     # create tabPanel with datatable in it
-    myTabs = lapply(seq_len(ngroups()), function(i) {
-      tabPanel(paste0("group_",i),
-               plotlyOutput(ns(paste0("group_",i)))
+    myTabs = lapply(seq_len(ngroups()+1), function(i) {
+      tabPanel(paste0("group_",(i-1)),
+               plotlyOutput(ns(paste0("group_",(i-1))), width = "800px", height = "800px")
       )
     })
 
@@ -26,20 +51,30 @@ meanPlots = function(input, output, session, data, stim.time, ngroups){
   })
   #create datatables #TODO slider for CI
   observe({
-    lapply(seq_len(ngroups()), function(i) {
-      output[[paste0("group_",i)]] <- renderPlotly({
-        dt = setDT(data())[get(input$meta.grouping) == i]
-        stims = stim.times()
-        ggplotly(
-        create_plot(dt, ci.lvl = 0.05,
-        stimulus.rug = stims,
-        nuc.erk = input$nuc.erk,
-        cyto.erk = input$cyto.erk,
-        time.var = input$time.var,
-        stim.var = input$stim.var,
-        erk.ratio.var = erk.ratio,
-        vlines = False)
-        )
+    lapply(seq_len(ngroups()+1), function(i) {
+      output[[paste0("group_",(i-1))]] <- renderPlotly({
+       
+     
+        if(i == (ngroups()+1)){
+          gg = create_plot(data = setDT(data())[get(stim.var()) %like% "CTRL"], ci.lvl = 0.05,
+                           stimulus.rug = stim.times(),
+                           nuc.erk = nuc.erk(),
+                           cyto.erk = cyto.erk(),
+                           time.var = time.var(),
+                           stim.var = stim.var(),
+                           erk.ratio.var = "erk.ratio",
+                           vlines = FALSE, ribbon = input$checkrug)
+        }else{
+          gg = create_plot(data = setDT(data())[get(meta.grouping()) == (i-1)], ci.lvl = 0.05,
+                           stimulus.rug = stim.times(),
+                           nuc.erk = nuc.erk(),
+                           cyto.erk = cyto.erk(),
+                           time.var = time.var(),
+                           stim.var = stim.var(),
+                           erk.ratio.var = "erk.ratio",
+                           vlines = FALSE, ribbon = input$checkrug)
+        }
+        ggplotly(print(gg))
       })
     })
   }
