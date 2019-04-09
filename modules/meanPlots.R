@@ -25,7 +25,7 @@ meanPlots = function(input, output, session, data, stim.times, ngroups,
 
   
   output$pdfr <- downloadHandler(
-    filename = "averagePlots.pdf",
+    filename = function() {"averagePlots.pdf"},
     content = function(file) {
       create_pdf(setDT(isolate(data())), ci.lvl = 0.05,
                  stimulus.rug = stim.times(),
@@ -35,7 +35,7 @@ meanPlots = function(input, output, session, data, stim.times, ngroups,
                  stim.var = stim.var(),
                  erk.ratio.var = "erk.ratio",
                  vlines = FALSE, ngroups = ngroups(), pdf.filename = file, meta.grouping  = meta.grouping())
-    }
+    },contentType = "pdf"
     )
   
   
@@ -43,7 +43,7 @@ meanPlots = function(input, output, session, data, stim.times, ngroups,
     # create tabPanel with datatable in it
     myTabs = lapply(seq_len(ngroups()+1), function(i) {
       tabPanel(paste0("group_",(i-1)),
-               plotlyOutput(ns(paste0("group_",(i-1))), width = "800px", height = "800px")
+               plotlyOutput(ns(paste0("group_",(i-1))), width = "1000px", height = "800px")
       )
     })
 
