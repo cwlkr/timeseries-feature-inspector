@@ -1,4 +1,8 @@
-create_plot = function(data, ci.lvl, stimulus.rug, stim.var, erk.ratio.var, time.var, nuc.erk, cyto.erk,stim.color = "red",  alpha = 0.1, xlab = "Real Time (min)", ylabel = "ERK-KTR Cytoplasmic ot Nuclear Ratio", vlines = F, ribbon){
+create_plot = function(data, ci.lvl, stimulus.rug,
+                       stim.var, erk.ratio.var, time.var, nuc.erk,
+                       cyto.erk,stim.color = "red",  alpha = 0.1,
+                       xlab = "Real Time (min)", ylabel = "ERK-KTR Cytoplasmic ot Nuclear Ratio", vlines = F,
+                       ribbon = TRUE, rug = TRUE){
   a = ci.lvl
   #create unique id for each track..
   #data[,unique := paste(Image_Metadata_Site, objNuc_TrackObjects_Label, sep = "_")]
@@ -7,12 +11,12 @@ create_plot = function(data, ci.lvl, stimulus.rug, stim.var, erk.ratio.var, time
   data.summary <- data %>% ungroup() %>% group_by(.dots = c(stim.var, time.var)) %>% summarise(ymin_ctn = min(get(erk.ratio.var)) , ymax_ctn = max(get(erk.ratio.var)), mean_ctn = mean(get(erk.ratio.var)),
                                                                                                lower = mean(get(erk.ratio.var)) - (qnorm(1-(a/2)) * sd(get(erk.ratio.var))/sqrt(n())) , upper =  mean(get(erk.ratio.var)) + (qnorm(1-(a/2)) * sd(get(erk.ratio.var))/sqrt(n())))
   #get also rug of pulses
-  
+  rugframe = data.frame("st" = isolate(stimulus.rug) , y = rep(x = NA_integer_, length(stimulus.rug)), a = rep(0,length(stimulus.rug)))
   #check if CTRL and treat differently and maybe check if everything is ctrl.
   ctrl = data.summary %>% filter(get(stim.var) %like% "CTRL")
   #ctrl.neg = data.summary %>% filter(get(stim.var) %like% "\\-CTRL")
   #ctrl.pos = data.summary %>% filter(get(stim.var) %like% "\\+CTRL")
-  ctrl = ctrl %>% ungroup %>% mutate(Stimulation_treatment =  forcats::fct_rev(as.factor(get(stim.var))))
+  #ctrl = ctrl %>% ungroup %>% mutate(Stimulation_treatment =  forcats::fct_rev(as.factor(get(stim.var))))
   
   if(nrow(ctrl) == nrow(data.summary)){
     data.plot = ctrl
@@ -21,8 +25,12 @@ create_plot = function(data, ci.lvl, stimulus.rug, stim.var, erk.ratio.var, time
   }
   ggp = ggplot(data.plot, aes(x = get(time.var), y = mean_ctn, group = get(stim.var)))+ 
     geom_line(aes(color = get(stim.var)), size = 1.2) + 
-    labs(x = xlab, y = ylabel, legend = "stim.var")  + ggplotTheme() + theme(legend.title = element_blank()) #+
-    #geom_rug(data = data.frame(stim.times = stimulus.rug), aes(x=stim.times,y =NULL, group = NULL), color = stim.color)
+    labs(x = xlab, y = ylabel, legend = "stim.var")  + ggplotTheme() + theme(legend.title = element_blank())
+    
+  
+  if(rug){
+    ggp = ggp + geom_rug(data = rugframe, aes(x=st, y= y, group = a), color = stim.color)
+  }
   
   if(!(nrow(ctrl) == nrow(data.summary))){
     ggp = ggp + geom_line(data = ctrl, aes( group = get(stim.var), linetype=get(stim.var)),  color = "black",  size = 1.2) +
@@ -90,7 +98,7 @@ create_pdf = function(data,
                      time.var = time.var,
                      stim.var = stim.var,
                      erk.ratio.var = erk.ratio.var,
-                     vlines = vlines)
+                     vlines = vlines, ribbon = TRUE)
     plot(gg)
   }
   gg = create_plot(data = setDT(data)[get(stim.var) %like% "CTRL"],
@@ -101,7 +109,7 @@ create_pdf = function(data,
                    time.var = time.var,
                    stim.var = stim.var,
                    erk.ratio.var = erk.ratio.var,
-                   vlines = vlines)
+                   vlines = vlines, ribbon = TRUE)
   plot(gg)
   dev.off()
   

@@ -176,7 +176,6 @@ shinyServer(function(input, output, session) {
     get.stim.times = eventReactive(input$mergeandplot, {
       stim.times <- loadMetaData() %>% select(contains(input$stim.time.var), input$stim.var) %>% 
         select(contains(input$stim.time.var)) %>% slice(1)  %>% c(., recursive=TRUE) %>% as.numeric()
-      cat(stim.times)
       return(stim.times)
     })
     get.dt.data = eventReactive(input$mergeandplot, {
@@ -202,8 +201,8 @@ shinyServer(function(input, output, session) {
   #output$table =  DT::renderDataTable(dataLoadNuc())
   callModule(meanPlots, "meanPlots",
              data = reactive(get.dt.data()),
-             reactive(get.stim.times()),
-             reactive(get.dt.ngroups()),
+             stim.times = reactive(get.stim.times()),
+             ngroups = reactive(get.dt.ngroups()),
              meta.grouping = reactive(input$meta.grouping),
              nuc.erk = reactive(input$nuc.erk),
              cyto.erk = reactive(input$cyto.erk),
