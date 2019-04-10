@@ -1,5 +1,5 @@
 
-pacman::p_load(d3heatmap, shinydashboard, tidyverse, heatmaply, plotly, data.table, R.utils, readxl)
+pacman::p_load(d3heatmap, shinydashboard, tidyverse, heatmaply, plotly, data.table, R.utils, readxl, shinyBS)
 
 options(shiny.maxRequestSize = 200 * 1024 ^ 2)
 
@@ -93,6 +93,10 @@ shinyServer(function(input, output, session) {
         locMetWell = locMet[grep('Well', locMet)[1]]
           }
       tagList(
+        checkboxInput("check.receptor", "Filter by Receptor Levels", TRUE),
+        uiOutput("rec.selection"),
+        bsCollapse(
+          bsCollapsePanel(title = "Column Selector:",
         selectInput(
           'nuc.erk',
           'Select Nuclear Erk Label (e.g. objNuc_Intensity_MeanIntensity_imErk):',
@@ -169,8 +173,9 @@ shinyServer(function(input, output, session) {
           locMet,
           width = '100%',
           selected = locMetWell
-        ),
-        actionButton("mergeandplot", "OK")
+        ))),
+        actionButton("mergeandplot", "Plot")
+        # downloadButton("downloadres", "Download Merged File")
       )
     })
     get.stim.times = eventReactive(input$mergeandplot, {
@@ -178,18 +183,57 @@ shinyServer(function(input, output, session) {
         select(contains(input$stim.time.var)) %>% slice(1)  %>% c(., recursive=TRUE) %>% as.numeric()
       return(stim.times)
     })
-    get.dt.data = eventReactive(input$mergeandplot, {
+    
+    # output$downloadres <- downloadHandler("mergedFile.csv",
+    #                       content = function(file){fwrite(x = data.for.d(),file = file)},
+    #                       contentType = "csv"
+    #   
+    # )
+    # 
+    output$rec.selection = renderUI({
+      tagList(  
+      plotOutput("rec.dist"),
+      sliderInput("rec.slider", label="select qunatiles", min = 0, max = 1, value = c(0.1,0.95))
+      )
+    })
+    observe({
+      receptordata = loadRecData()
+      cut = (receptordata$obj_Rec_Intensity_MeanIntensity_imRecCorrOrig)
+      breaks =  seq(0,1000,1) / (1000 / max(receptordata$obj_Rec_Intensity_MeanIntensity_imRecCorrOrig))
+      if(!is.null(input$check.receptor)){
+      if(input$check.receptor){
+      output$rec.dist = renderPlot({ hist(cut, freq = F, breaks = breaks)
+                     
+                     abline(v=quantile(receptordata$obj_Rec_Intensity_MeanIntensity_imRecCorrOrig, input$rec.slider[1], na.rm = T), col = "red")
+                     abline(v = quantile( receptordata$obj_Rec_Intensity_MeanIntensity_imRecCorrOrig,input$rec.slider[2], na.rm = T) , col = "red")})
+    }}}
+    )
+    get.dt.data = eventReactive({input$mergeandplot}, {
       #actual data merging testing and stuff.
       dt.data = dataLoadNuc()
       metadata = loadMetaData()
+      receptordata = NULL
+      if(input$check.receptor == TRUE){
+        shiny::validate(need(input$receptordata$datapath != "" | is.null(input$receptordata$datapath), "receptorFile needed!"))
+        receptordata = loadRecData()
+      }
       dt.data = dt.data[, erk.ratio := get(input$cyto.erk)/get(input$nuc.erk)]
       
-      #TODO Wrong
+      #
       groups <- metadata %>% # group_by(.dots = meta.grouping) %>% 
         select(input$stim.var, input$meta.grouping, input$pos.met, input$well.met) %>% rename("Image_Metadata_Site" = "Position", "Metadata_Well" = "Well") %>%
         mutate("Grouping" = as.numeric(get(input$meta.grouping)), Image_Metadata_Site = as.numeric(Image_Metadata_Site), Metadata_Well = as.numeric(Metadata_Well)) 
       
       dt.data =   left_join(dt.data, groups)
+      
+      if(!is.null(receptordata) & input$check.receptor == TRUE){
+        # change to selector input stuff.
+        ci_l = quantile( receptordata$obj_Rec_Intensity_MeanIntensity_imRecCorrOrig,input$rec.slider[1], na.rm = T)
+        ci_u = quantile( receptordata$obj_Rec_Intensity_MeanIntensity_imRecCorrOrig,input$rec.slider[2], na.rm = T)
+        receptordata %>% filter(obj_Rec_Intensity_MeanIntensity_imRecCorrOrig > ci_l &
+                                  obj_Rec_Intensity_MeanIntensity_imRecCorrOrig < ci_u) %>% select(Image_Metadata_Site, track_id) -> reduce
+        dt.data = left_join(reduce, dt.data)
+      }
       # if(!is.null(loadRecData())){
       #   # TODO merge rec data
       # }
@@ -198,6 +242,7 @@ shinyServer(function(input, output, session) {
     get.dt.ngroups = reactive(
       get.dt.data() %>% select(input$meta.grouping)  %>% summarise(n = length(unique(get(input$meta.grouping)))) %>% pull()
     )
+  data.container = reactiveValues(dt.data = reactive(get.dt.data()))
   #output$table =  DT::renderDataTable(dataLoadNuc())
   callModule(meanPlots, "meanPlots",
              data = reactive(get.dt.data()),

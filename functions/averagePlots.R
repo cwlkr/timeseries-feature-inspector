@@ -25,7 +25,8 @@ create_plot = function(data, ci.lvl, stimulus.rug,
   }
   ggp = ggplot(data.plot, aes(x = get(time.var), y = mean_ctn, group = get(stim.var)))+ 
     geom_line(aes(color = get(stim.var)), size = 1.2) + 
-    labs(x = xlab, y = ylabel, legend = "stim.var")  + ggplotTheme() + theme(legend.title = element_blank())
+    labs(x = xlab, y = ylabel, legend = "stim.var")  + ggplotTheme() + theme(legend.title = element_blank()) + 
+    scale_y_continuous(limits = c(0,1.5))
     
   
   if(rug){
@@ -37,11 +38,11 @@ create_plot = function(data, ci.lvl, stimulus.rug,
       #geom_line(data = ctrl.neg, aes( group = get(stim.var)), linetype="dashed", color = "black",  size = 1.2) +
       #scale_linetype_manual(values = c("pos", "neg")) +
       scale_color_brewer(palette = "Set1")
-    if (ribbon){
+    if (!is.null(ribbon) && ribbon){
       ggp = ggp + geom_ribbon(data = ctrl,alpha = alpha, mapping = aes(ymin = lower, ymax = upper)) 
     }
   }
-  if(ribbon){
+  if(!is.null(ribbon) && ribbon){
     ggp = ggp  + geom_ribbon(alpha = alpha, mapping = aes(ymin = lower, ymax = upper))
   }
   if(vlines){

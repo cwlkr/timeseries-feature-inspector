@@ -14,13 +14,14 @@ meanPlots = function(input, output, session, data, stim.times, ngroups,
   
   ns <- session$ns
   
-  observeEvent(data(),{
-    output$dnr = renderUI(downloadButton(ns("pdfr"), "Download Average Plots"))}
-    )
-  observeEvent(data(),{
-    output$ribbonbutton = renderUI(checkboxInput(ns("checkrug"), "Display CI ribbon", value = TRUE))
-    }
-  )
+  # observeEvent(data(),{
+  #   output$dnr = 
+  #     
+  #   )
+  # observeEvent(data(),{
+  #   output$ribbonbutton = 
+  #   }
+  # )
   
 
   
@@ -46,8 +47,12 @@ meanPlots = function(input, output, session, data, stim.times, ngroups,
                plotlyOutput(ns(paste0("group_",(i-1))), width = "1000px", height = "800px")
       )
     })
-
-    do.call(tabsetPanel, myTabs)
+  tagList(
+    do.call(tabsetPanel, myTabs),
+    renderUI(checkboxInput(ns("checkrug"), "Display CI ribbon", value = TRUE)),
+    renderUI(downloadButton(ns("pdfr"), "Download Average Plots"))
+    
+  )
   })
   #create datatables #TODO slider for CI
   observe({

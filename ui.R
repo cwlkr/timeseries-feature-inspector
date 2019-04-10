@@ -10,6 +10,10 @@ shinyUI(fluidPage(
   title = "Timecourse Inspector",
   sidebarLayout(
     sidebarPanel(
+      tags$head(tags$style(
+      type = 'text/css',
+      'form.well { max-height: 100%; overflow-y: auto; }'
+    )),
       #Selector for file upload
       fileInput(
         'seriesSelectedFileIn',
@@ -22,12 +26,12 @@ shinyUI(fluidPage(
         accept = c('text/csv', 'text/comma-separated-values,text/plain')
       ),
       #TODO handle recfile!
-      # fileInput(
-      #   'receptordata',
-      #   'Select data file (e.g. receptor) and press "Load Data"',
-      #   accept = c('text/csv', 'text/comma-separated-values,text/plain')
-      # ),
-      actionButton("loadAll", "Load Files"),
+      fileInput(
+        'receptordata',
+        'Select data file (e.g. receptor) and press "Load Data"',
+        accept = c('text/csv', 'text/comma-separated-values,text/plain')
+      ),
+      actionButton("loadAll", "Load Files"),   tags$br(),tags$hr(),
       uiOutput("cond")
     ),
     mainPanel(
