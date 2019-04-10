@@ -193,7 +193,7 @@ shinyServer(function(input, output, session) {
     output$rec.selection = renderUI({
       tagList(  
       plotOutput("rec.dist"),
-      sliderInput("rec.slider", label="select qunatiles", min = 0, max = 1, value = c(0.1,0.95))
+      sliderInput("rec.slider", label="select quantiles", min = 0, max = 1, value = c(0.1,0.95))
       )
     })
     observe({
