@@ -174,7 +174,7 @@ shinyServer(function(input, output, session) {
           width = '100%',
           selected = locMetWell
         ))),
-        actionButton("mergeandplot", "Plot")
+        actionButton("mergeandplot", "Filter and Plot")
         # downloadButton("downloadres", "Download Merged File")
       )
     })
@@ -191,11 +191,14 @@ shinyServer(function(input, output, session) {
     # )
     # 
     output$rec.selection = renderUI({
+      input$check.receptor
+      shiny::validate(need(input$receptordata$datapath != "" | !is.null(input$receptordata$datapath), ""))
+        if(input$check.receptor == TRUE & !is.null(loadRecData())){
       tagList(  
       plotOutput("rec.dist"),
       sliderInput("rec.slider", label="select quantiles", min = 0, max = 1, value = c(0.1,0.95))
       )
-    })
+    }})
     observe({
       receptordata = loadRecData()
       cut = (receptordata$obj_Rec_Intensity_MeanIntensity_imRecCorrOrig)
@@ -203,7 +206,6 @@ shinyServer(function(input, output, session) {
       if(!is.null(input$check.receptor)){
       if(input$check.receptor){
       output$rec.dist = renderPlot({ hist(cut, freq = F, breaks = breaks)
-                     
                      abline(v=quantile(receptordata$obj_Rec_Intensity_MeanIntensity_imRecCorrOrig, input$rec.slider[1], na.rm = T), col = "red")
                      abline(v = quantile( receptordata$obj_Rec_Intensity_MeanIntensity_imRecCorrOrig,input$rec.slider[2], na.rm = T) , col = "red")})
     }}}
@@ -214,7 +216,7 @@ shinyServer(function(input, output, session) {
       metadata = loadMetaData()
       receptordata = NULL
       if(input$check.receptor == TRUE){
-        shiny::validate(need(input$receptordata$datapath != "" | is.null(input$receptordata$datapath), "receptorFile needed!"))
+        shiny::validate(need(input$receptordata$datapath != "" | !is.null(input$receptordata$datapath), "receptorFile needed!"))
         receptordata = loadRecData()
       }
       dt.data = dt.data[, erk.ratio := get(input$cyto.erk)/get(input$nuc.erk)]
